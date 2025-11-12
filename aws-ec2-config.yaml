@@ -14,7 +14,7 @@ Parameters:
 
   LatestAmiId:
     Description: 'Latest Amazon Linux 2 AMI ID'
-    Type: AWS::EC2::Image::Id
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
 
 Resources:
@@ -150,21 +150,32 @@ Resources:
           Value: MySecurityGroup
 
   # -------------------
+  # Security Hub
+  # -------------------
+  ExampleHubWithTags:
+    Type: 'AWS::SecurityHub::Hub'
+    Properties:
+      Tags:
+        key1: value1
+        key2: value2
+      EnableDefaultStandards: true
+      ControlFindingGenerator: 'SECURITY_CONTROL'
+
+  # -------------------
   # EC2 Instance in Public Subnet
   # -------------------
-  MyEC2Instance:
+  DevSecOps2EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t3.micro
-      KeyName: !Ref KeyName
-      ImageId: !Ref LatestAmiId
+      ImageId: ami-0c55b159cbfafe1f0
+      InstanceType: t2.micro
       SubnetId: !Ref PublicSubnet
       SecurityGroupIds:
         - !Ref MySecurityGroup
       IamInstanceProfile: !Ref EC2InstanceProfile
       Tags:
         - Key: Name
-          Value: MyEC2Instance
+          Value: DevSecOps2EC2Instance
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -186,7 +197,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: ec2.amazonaws.comReusable VPC with Public and Private Subnets, Internet Gateway, and Route Tables
+              Service: ec2.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
@@ -234,18 +245,18 @@ Outputs:
 
   EC2InstanceId:
     Description: ID of EC2 Instance
-    Value: !Ref MyEC2Instance
+    Value: !Ref DevSecOps2EC2Instance
     Export:
       Name: !Sub '${AWS::StackName}-EC2Instance'
 
   EC2InstancePublicIP:
     Description: Public IP of EC2 Instance
-    Value: !GetAtt MyEC2Instance.PublicIp
+    Value: !GetAtt DevSecOps2EC2Instance.PublicIp
     Export:
       Name: !Sub '${AWS::StackName}-EC2PublicIP'
 
   EC2InstanceDNS:
     Description: Public DNS of EC2 Instance
-    Value: !GetAtt MyEC2Instance.PublicDnsName
+    Value: !GetAtt DevSecOps2EC2Instance.PublicDnsName
     Export:
       Name: !Sub '${AWS::StackName}-EC2DNS'
